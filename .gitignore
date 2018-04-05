@@ -1,0 +1,6 @@
+*.db
+pr_data
+.DS_Store
+*.ipynb
+*.pyc
+.ipynb_checkpoints
