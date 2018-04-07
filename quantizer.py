@@ -6,7 +6,7 @@ class Quantizer():
     def __init__(self, levels=None):
         self.levels = levels
 
-    def count_obs(self, con, levels=None, max=1000):
+    def count_obs(self, con, levels=None, nrows=1000, offset=0):
         ''' count frequency of each possible tuple
             example: levels = [equal_spaced_bounds(3) for i in range(5)]
         '''
@@ -18,19 +18,15 @@ class Quantizer():
         c = con.cursor()
         query = '''
         SELECT f1,f2,f3,f4,f5,class
-        FROM observations limit {}
-        '''.format(max)
+        FROM observations limit {} offset {}
+        '''.format(nrows, offset)
         c.execute(query)
-        co=0
-        for i in range(max):
-            co+=1
+        for i in range(nrows):
             obs = c.fetchone()
             mdAddress = map(lambda obs:quantizers[obs[0]](obs[1]),
                             enumerate(obs))
             counts[mdAddress] += 1
         con.close()
-        print 'count'
-        print co
         return counts
 
     def calc_prob_dc(self, observation_counts):
