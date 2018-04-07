@@ -74,6 +74,7 @@ class TestDiscreteBayes(unittest.TestCase):
         '''
         con = dbs.connect("observations.db")
         test_counts = q.count_obs(con, levels, nrows, offset)
+        con.close()
     
     def test_confusion_matrix(self, nrows=1000, offset=3300000): 
         db = self.create_discrete_bayes()
