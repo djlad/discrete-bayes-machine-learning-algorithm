@@ -54,15 +54,16 @@ class Optimizer():
                 highB = best_bounds[dim][point+1]
             space = highB - lowB
             spacePoints = np.floor(space/d)
-            newBound = random.randint(1, spacePoints) * d + lowB
-            best_bounds[dim][point] = newBound
-            test_gain = self.eval_bounds(best_bounds)
+            if spacePoints > 1:
+                newBound = random.randint(1, spacePoints) * d + lowB
+                best_bounds[dim][point] = newBound
+                test_gain = self.eval_bounds(best_bounds)
 
-            if test_gain > best_gain:
-                best_gain = test_gain
-            else:
-                best_bounds[dim][point] = bound
-            print test_gain
-            print best_gain
-            print best_bounds
-            print '\n'
+                if test_gain > best_gain:
+                    best_gain = test_gain
+                else:
+                    best_bounds[dim][point] = bound
+                print test_gain
+                print best_gain
+                print best_bounds
+                print '\n'
