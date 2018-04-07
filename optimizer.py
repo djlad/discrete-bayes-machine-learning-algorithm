@@ -36,8 +36,8 @@ class Optimizer():
         gain = db.calc_gain(cm, db.gain_matrix)
         return gain
     
-    def optimize_bounds(self, start_bounds, rounds=10, d=.05):
-        best_ev = 0
+    def optimize_bounds(self, start_bounds, rounds=1000, d=.05):
+        best_gain = 0
         best_bounds = start_bounds
         for i in best_bounds:
             print i
@@ -45,19 +45,23 @@ class Optimizer():
 
         for i in range(rounds):
             dim = random.randint(0, len(best_bounds)-2)
-            point = random.randint(1, len(best_bounds[dim])-2)
+            point = random.randint(1, len(best_bounds[dim])-1)
             lowB = best_bounds[dim][point-1]
             bound = best_bounds[dim][point]
-            highB = best_bounds[dim][point+1]
+            if point == len(best_bounds[dim])-1:
+                highB = 1
+            else:
+                highB = best_bounds[dim][point+1]
             space = highB - lowB
             spacePoints = np.floor(space/d)
-            newPoint = random.randint(1, spacePoints) * d + lowB
-            best_bounds[dim][point] = newPoint
+            newBound = random.randint(1, spacePoints) * d + lowB
+            best_bounds[dim][point] = newBound
             test_gain = self.eval_bounds(best_bounds)
 
-            print lowB
-            print bound
-            print highB
-            print newPoint
+            if test_gain > best_gain:
+                best_gain = test_gain
+            else:
+                best_bounds[dim][point] = bound
             print test_gain
+            print best_gain
             print '\n'
