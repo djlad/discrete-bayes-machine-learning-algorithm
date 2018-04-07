@@ -21,29 +21,47 @@ class Quantizer():
         FROM observations limit {}
         '''.format(max)
         c.execute(query)
+        co=0
         for i in range(max):
+            co+=1
             obs = c.fetchone()
             mdAddress = map(lambda obs:quantizers[obs[0]](obs[1]),
                             enumerate(obs))
             counts[mdAddress] += 1
         con.close()
+        print 'count'
+        print co
         return counts
 
     def calc_prob_dc(self, observation_counts):
-        '''calc probability of d given c using count_obs output
+        '''calc p(d|c)/p(d) using count_obs output
         observation_counts -- hashmap where 
         observation_counts[(f1, f2, ..., class)] gives count of observations
         '''
         totals = {}
+        total_observations = 0.0
         classes = observation_counts.num_levels[-1]
+        p_dc = md.Mdarray(observation_counts.num_levels)
         for i in range(classes):
             totals[i] = 0
         for combination in observation_counts:
             totals[combination[-1]] += observation_counts[combination]
+            total_observations += observation_counts[combination]
         for combination in observation_counts:
             c = combination[-1]
-            observation_counts[combination] /= float(totals[c])
-        return observation_counts
+            if observation_counts[combination] > 0:
+                #p_d = observation_counts[combination]/total_observations
+                #observation_counts[combination] /= float(totals[c]) * p_d
+                #if combination == [0,0,0,0,0,1] or combination == [0,0,0,0,0,0]:
+                #    print p_d
+                p_dc[combination] = observation_counts[combination] / float(totals[c])
+        return p_dc
+    
+    def calc_pd(self, p_dc):
+        p_d = md.Mdarray(p_dc.num_levels[:-1])
+        for combination in p_dc:
+            p_d[combination[:-1]] += p_dc[combination]
+        return p_d
 
     def dimensional_probabilities(self, df, num_intervals=10000):
         quantize = gen_quantize(equal_spaced_bounds(num_intervals))

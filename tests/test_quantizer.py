@@ -27,6 +27,23 @@ class TestQuantizer(unittest.TestCase):
         counts = self.test_count_obs(nrows)
         probsdc = q.calc_prob_dc(counts)
         self.assertEqual(probsdc.total(), counts.num_levels[-1])
+        #self.assertEqual(probsdc.total(), 20.0)#counts.num_levels[-1])
+        #totals = [0]*counts.num_levels[-1]
+        #for combo in probsdc:
+        #    totals[combo[-1]] += probsdc[combo]
+        return probsdc
+    
+    def test_calc_pd(self, nrows=10):
+        q = Quantizer()
+        counts = self.test_count_obs(nrows)
+        p_d = q.calc_pd(counts)
+        self.assertEqual(nrows, p_d.total())
+        if counts.num_levels[-1] == 2:
+            for combination in p_d:
+                total = p_d[combination]
+                a = counts[combination + [0]]
+                b = counts[combination + [1]]
+                self.assertEqual(total, a+b)
 
     def test_equal_spaced_bounds(self):
         equal_bounds = quantizer.equal_spaced_bounds(3, 100)
@@ -87,6 +104,8 @@ class TestQuantizer(unittest.TestCase):
         for ao in actual_output:
             self.assertEqual(ao, 7)
 
+    def runTest(self):
+        pass
 
 
 
