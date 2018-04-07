@@ -10,6 +10,21 @@ import quantizer
 import sqlite3 as dbs
 
 class TestDiscreteBayes(unittest.TestCase):
+    def equal_bounds(self):
+        levels = [quantizer.equal_spaced_bounds(6) for i in range(5)]
+        levels.append(quantizer.equal_spaced_bounds(2))
+        return levels
+
+    def best_bounds(self):
+        optimal_bounds =    [
+        [0.00000,   0.02037,   0.18117,   0.56374,   0.90676,   0.98718,   1.00000],
+        [0.00000,   0.47436,   0.49150,   0.53603,   0.58948,   0.62023,   1.00000],
+        [0.00000,   0.08321,   0.15193,   0.24154,   0.60653,   0.94493,   1.00000],
+        [0.00000,   0.02697,   0.22574,   0.25494,   0.32456,   0.85316,   1.00000],
+        [0.00000,   0.06348,   0.10362,   0.19162,   0.51352,   0.60375,   1.00000]]
+        optimal_bounds.append(quantizer.equal_spaced_bounds(2))
+        return optimal_bounds
+
     def create_discrete_bayes(self):
         return DiscreteBayes(np.identity(2))
     
@@ -27,48 +42,28 @@ class TestDiscreteBayes(unittest.TestCase):
         p_dc = q.calc_prob_dc(counts)
         p_d = q.calc_pd(p_dc)
         p_cd = db.calc_prob_cd(p_dc, p_d, [.5, .5])
-        #print p_cd
-        print p_cd[1, 1, 1, 1, 1, 1]
-        print p_cd[1, 1, 1, 1, 1, 0]
-        for combo in p_dc:
-            if p_cd[combo] > 0:
-                print combo
-                #print p_dc[combo]
-                print p_cd[combo]
     
-    def test_optimal_bounds(self, nrows=10000, offset=3300000):
+    def test_optimal_bounds(self, nrows=1000, offset=3300000):
         db = self.create_discrete_bayes()
         q = self.create_quantizer()
-        levels = [quantizer.equal_spaced_bounds(6) for i in range(5)]
-        levels.append(quantizer.equal_spaced_bounds(2))
 
-        optimal_bounds =    [
-        [0.00000,   0.02037,   0.18117,   0.56374,   0.90676,   0.98718,   1.00000],
-        [0.00000,   0.47436,   0.49150,   0.53603,   0.58948,   0.62023,   1.00000],
-        [0.00000,   0.08321,   0.15193,   0.24154,   0.60653,   0.94493,   1.00000],
-        [0.00000,   0.02697,   0.22574,   0.25494,   0.32456,   0.85316,   1.00000],
-        [0.00000,   0.06348,   0.10362,   0.19162,   0.51352,   0.60375,   1.00000]]
-
-        optimal_bounds.append(quantizer.equal_spaced_bounds(2))
-        levels = optimal_bounds
-        print levels
+        levels = self.equal_bounds()
+        levels = self.best_bounds()
+        #print levels
 
         con = dbs.connect("observations.db")
         counts = q.count_obs(con, levels, nrows)
-        #print counts
         con.close()
-        #print counts
         p_dc = q.calc_prob_dc(counts)
-        #print counts == p_dc
-        #print p_dc
-        #p_d = q.calc_pd(p_dc)
         p_d = q.calc_pd(p_dc)
         p_cd = db.calc_prob_cd(p_dc, p_d, [.5, .5])
-        #print p_cd
+        '''
         print p_cd[[5, 5, 5, 5, 5, 1]]
         print p_cd[[5, 5, 5, 5, 5, 0]]
         d_rules, e_gains = db.bayes_d_rule(p_cd)
-        #print d_rules
+        print d_rules[[5,5,5,5,5]]
+        print e_gains[[5,5,5,5,5]]
+        '''
         '''
         for com in d_rules:
             print com
@@ -79,7 +74,30 @@ class TestDiscreteBayes(unittest.TestCase):
         '''
         con = dbs.connect("observations.db")
         test_counts = q.count_obs(con, levels, nrows, offset)
-        print db.eval_rules(d_rules, test_counts)
+    
+    def test_confusion_matrix(self, nrows=1000, offset=3300000): 
+        db = self.create_discrete_bayes()
+        q = self.create_quantizer()
+        levels = self.equal_bounds()
+        #levels = self.best_bounds()
+        con = dbs.connect("observations.db")
+        counts = q.count_obs(con, levels, nrows)
+        con.close()
+        p_dc = q.calc_prob_dc(counts)
+        p_d = q.calc_pd(p_dc)
+        p_cd = db.calc_prob_cd(p_dc, p_d, [.5, .5])
+        con.close()
+        drules, e_gains = db.bayes_d_rule(p_cd)
+        con = dbs.connect("observations.db")
+        test_counts = q.count_obs(con, levels, nrows, offset)
+        con.close()
+        tc = test_counts
+        cm = db.confusion_matrix(drules, test_counts)
+
+        gain = db.calc_gain(cm, db.gain_matrix)
+        true_assigned = db.eval_rules(drules, test_counts)[-1]
+        self.assertAlmostEqual(gain, true_assigned)
+        
 
 
 

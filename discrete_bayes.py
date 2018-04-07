@@ -1,5 +1,6 @@
 import mdarray as md
 import pandas as pd
+import numpy as np
 
 #mdarray.Mdarray()
 class DiscreteBayes():
@@ -49,6 +50,23 @@ class DiscreteBayes():
             if assigned == combo[-1]:
                 correct += counts[combo]
         return correct, total, float(correct)/total
+    
+    def confusion_matrix(self, drules, test_counts):
+        k = test_counts.num_levels[-1]
+        confusion = np.zeros([k, k])
+        for combo in test_counts:
+            assigned = drules[combo[:-1]]
+            if assigned == -1:
+                continue
+            true = combo[-1]
+            confusion[true, assigned] += test_counts[combo]
+        total = test_counts.total()
+        return confusion/float(total)
+    
+    def calc_gain(self, gain, confusion):
+        evs = np.multiply(gain, confusion)
+        return np.sum(evs)
+        
 
         
     #def rule_gain(self, p_cd, )

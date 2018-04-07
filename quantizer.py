@@ -54,6 +54,7 @@ class Quantizer():
         return p_dc
     
     def calc_pd(self, p_dc):
+        '''calculate p(d) using p(d|c)'''
         p_d = md.Mdarray(p_dc.num_levels[:-1])
         for combination in p_dc:
             p_d[combination[:-1]] += p_dc[combination]
@@ -101,8 +102,6 @@ class Quantizer():
                 frequency[obs] = 1
         con.close()
         return frequency
-        
-        
     
 
 def equal_discrete_func(x, levels=3):
