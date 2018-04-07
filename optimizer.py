@@ -64,4 +64,5 @@ class Optimizer():
                 best_bounds[dim][point] = bound
             print test_gain
             print best_gain
+            print best_bounds
             print '\n'
