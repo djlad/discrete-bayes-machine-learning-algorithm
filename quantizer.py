@@ -30,7 +30,7 @@ class Quantizer():
         return counts
 
     def calc_prob_dc(self, observation_counts):
-        '''calc p(d|c)/p(d) using count_obs output
+        '''calc p(d|c) using count_obs output
         observation_counts -- hashmap where 
         observation_counts[(f1, f2, ..., class)] gives count of observations
         '''
