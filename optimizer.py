@@ -19,14 +19,16 @@ class Optimizer():
     def create_discrete_bayes(self):
         return DiscreteBayes(np.identity(2))
     
-    def eval_bounds(self, bounds, nrows=50000, offset=3300000, trainoffset=0):
+    def eval_bounds(self, bounds, nrows=1000000, offset=3300000, trainoffset=0):
         q = self.create_quantzier()
         db = self.create_discrete_bayes()
         bounds
         con = dbs.connect("observations.db")
         counts = q.count_obs(con, bounds, nrows, trainoffset)
         con.close()
-        p_dc = q.calc_prob_dc(counts)
+        #p_dc = q.calc_prob_dc(counts)#MLE probabilities
+        volumes = q.calc_volumes(bounds)
+        p_dc = q.ksmooth(counts, volumes, 223)
         p_d = q.calc_pd(p_dc)
         p_cd = db.calc_prob_cd(p_dc, p_d, [.5, .5])
         drules, e_gains = db.bayes_d_rule(p_cd)

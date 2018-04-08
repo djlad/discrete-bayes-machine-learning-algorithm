@@ -1,6 +1,7 @@
 import mdarray as md
 from scipy.stats import entropy
 import numpy as np
+from copy import deepcopy
 
 class Quantizer():
     def __init__(self, levels=None):
@@ -59,6 +60,92 @@ class Quantizer():
         for combination in p_dc:
             p_d[combination[:-1]] += p_dc[combination]
         return p_d
+
+    def calc_side_lengths(self, levels):
+        '''calculate lengths of each interval'''
+        side_lengths = []
+        for dimension in levels:
+            side_lengths.append([])
+            for i, bound in enumerate(dimension):
+                if i+1 < len(dimension):
+                    side_lengths[-1].append(dimension[i+1] - bound)
+                else:
+                    side_lengths[-1].append(1 - bound)
+        return side_lengths
+    
+    def calc_volumes(self, levels):
+        side_lengths = self.calc_side_lengths(levels)
+        num_levels = map(lambda dim:len(dim), side_lengths)
+        volumes = md.Mdarray(num_levels)
+        for combo in volumes:
+            volume = 1
+            for dim, interval in enumerate(combo):
+                volume *= side_lengths[dim][interval]
+            volumes[combo] = volume
+        return volumes
+
+
+    def ksmooth(self, counts, volumes, kstar):
+        '''smooths probability estimates
+        counts -- counts for each bin
+        volumes -- volumes of each bin
+        kstar -- fixed count of surrounding bins
+        '''
+        combo = counts.indexes[5000]
+        num_levels = counts.num_levels
+        smoothed_counts = md.Mdarray(num_levels)
+        alphas = {}
+        for c in range(num_levels[-1]):
+            #for each class init alpha to 0
+            alphas[c] = 0
+        for combo in counts:
+            smoothed_count = self.calc_smoothed_bin_volume(combo, counts, volumes, kstar)
+            smoothed_counts[combo] += smoothed_count
+            alphas[combo[-1]] += smoothed_count
+        smoothed_p_dc = smoothed_counts
+        for combo in smoothed_p_dc:
+            smoothed_p_dc[combo] /= alphas[combo[-1]]
+        return smoothed_p_dc
+        
+    
+    def calc_smoothed_bin_volume(self, combo, counts, volumes, kstar):
+        '''find bm / Vmstar * vm
+        combo -- measurment combination eg (1,5,3,2,3,0)
+        counts -- counts of all combos
+        volumes -- volumes of all combos
+        kstar -- total counts needed for bin smoothing
+        '''
+        #sum of counts of closest bins
+        k = 0
+        #sum of volumes of closest bins
+        volume = 0
+        for neighbor in self.closest_bins(combo, counts.num_levels):
+            if k > kstar:
+                break
+            k += counts[neighbor]
+            volume += volumes[neighbor]
+        if volume > 0:
+            smoothed_volume = k * volumes[combo] / volume 
+        else:
+            smoothed_volume = 0
+        return smoothed_volume
+
+    
+    def closest_bins(self, orig_combo, num_levels):
+        combo = deepcopy(orig_combo)
+        yield combo
+        for i, feature_interval in enumerate(combo):
+            if i == len(combo)-1:
+                break
+            combo[i] -= 1
+            if combo[i] >= 0 and combo[i] < num_levels[i]:
+                yield combo
+            combo[i]+=2
+            if combo[i] >= 0 and combo[i] < num_levels[i]:
+                yield combo
+            combo[i] -= 1
+
+
 
     def dimensional_probabilities(self, df, num_intervals=10000):
         quantize = gen_quantize(equal_spaced_bounds(num_intervals))

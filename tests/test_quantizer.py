@@ -1,6 +1,7 @@
 import unittest
 import sqlite3 as db
 import pandas as pd
+import numpy as np
 from quantizer import Quantizer
 import quantizer
 
@@ -103,6 +104,25 @@ class TestQuantizer(unittest.TestCase):
         #                   6.30984611, 6.30949598]
         for ao in actual_output:
             self.assertEqual(ao, 7)
+    
+    def test_ksmooth(self, nrows=10000):
+        p_dc = self.test_calc_prob_dc(nrows)
+        q = Quantizer()
+        kstar = np.sqrt(nrows)
+        con = db.connect('observations.db')
+        bounds = [[0.0, 0.16666666666666666, 0.5666666666666667, 0.5666666666666667, 0.6166666666666667, 0.9166666666666666], [0.0, 0.5, 0.5, 0.55, 0.6166666666666667, 0.6666666666666667], [0.0, 0.1, 0.15000000000000002, 0.25, 0.6000000000000001, 0.9500000000000002], [0.0, 0.25, 0.3333333333333333, 0.7833333333333333, 0.8333333333333333, 0.8333333333333334], [0.0, 0.1, 0.2, 0.5, 0.6, 0.85], [0.0, 0.5]]
+        #bounds = [quantizer.equal_spaced_bounds(6) for i in range(5)]
+        #bounds.append([0,.5])
+        volumes = q.calc_volumes(bounds[:-1])
+        counts = q.count_obs(con, bounds, nrows)
+        con.close()
+        q.ksmooth(counts, volumes, kstar)
+
+    def test_calc_volumes(self):
+        levels = [quantizer.equal_spaced_bounds(6) for i in range(5)]
+        levels = [[0.0, 0.16666666666666666, 0.5666666666666667, 0.5666666666666667, 0.6166666666666667, 0.9166666666666666], [0.0, 0.5, 0.5, 0.55, 0.6166666666666667, 0.6666666666666667], [0.0, 0.1, 0.15000000000000002, 0.25, 0.6000000000000001, 0.9500000000000002], [0.0, 0.25, 0.3333333333333333, 0.7833333333333333, 0.8333333333333333, 0.8333333333333334], [0.0, 0.1, 0.2, 0.5, 0.6, 0.85], [0.0, 0.5]]
+        q = Quantizer()
+        q.calc_volumes(levels)
 
     def runTest(self):
         pass
