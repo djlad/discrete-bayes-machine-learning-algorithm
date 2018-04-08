@@ -26,7 +26,7 @@ class TestQuantizer(unittest.TestCase):
         q = Quantizer()
         counts = self.test_count_obs(nrows)
         probsdc = q.calc_prob_dc(counts)
-        self.assertEqual(probsdc.total(), counts.num_levels[-1])
+        self.assertAlmostEqual(probsdc.total(), counts.num_levels[-1])
         #self.assertEqual(probsdc.total(), 20.0)#counts.num_levels[-1])
         #totals = [0]*counts.num_levels[-1]
         #for combo in probsdc:

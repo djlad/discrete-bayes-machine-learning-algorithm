@@ -19,12 +19,12 @@ class Optimizer():
     def create_discrete_bayes(self):
         return DiscreteBayes(np.identity(2))
     
-    def eval_bounds(self, bounds, nrows=50000, offset=3300000):
+    def eval_bounds(self, bounds, nrows=50000, offset=3300000, trainoffset=0):
         q = self.create_quantzier()
         db = self.create_discrete_bayes()
         bounds
         con = dbs.connect("observations.db")
-        counts = q.count_obs(con, bounds, nrows)
+        counts = q.count_obs(con, bounds, nrows, trainoffset)
         con.close()
         p_dc = q.calc_prob_dc(counts)
         p_d = q.calc_pd(p_dc)
@@ -36,13 +36,19 @@ class Optimizer():
         gain = db.calc_gain(cm, db.gain_matrix)
         return gain
     
-    def optimize_bounds(self, start_bounds, rounds=1000, d=.05):
+    def optimize_bounds(self, start_bounds, rounds=1000000, d=.05):
+        nrows = 50000
+        offset = 3300000
+        trainoffset = 0
+
         best_gain = 0
         best_bounds = start_bounds
+        #number of rounds since change:
+        no_change_rounds = 0
         for i in best_bounds:
             print i
         print '\n'
-
+        
         for i in range(rounds):
             dim = random.randint(0, len(best_bounds)-2)
             point = random.randint(1, len(best_bounds[dim])-1)
@@ -57,12 +63,21 @@ class Optimizer():
             if spacePoints > 1:
                 newBound = random.randint(1, spacePoints) * d + lowB
                 best_bounds[dim][point] = newBound
-                test_gain = self.eval_bounds(best_bounds)
+                test_gain = self.eval_bounds(best_bounds, nrows)
 
-                if test_gain > best_gain:
+                if test_gain >= best_gain :
                     best_gain = test_gain
+                    no_change_rounds = 1
                 else:
                     best_bounds[dim][point] = bound
+                    no_change_rounds += 1
+            
+                if no_change_rounds%10 == 0:
+                    #switch up data if no change
+                    print "changed training set"
+                    trainoffset = (trainoffset+nrows) % offset
+                    print trainoffset
+                print no_change_rounds
                 print test_gain
                 print best_gain
                 print best_bounds

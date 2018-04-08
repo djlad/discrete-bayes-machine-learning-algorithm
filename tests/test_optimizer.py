@@ -17,19 +17,29 @@ class TestOptimizer(unittest.TestCase):
         [0.00000,   0.06348,   0.10362,   0.19162,   0.51352,   0.60375,   1.00000]]
         optimal_bounds.append(quantizer.equal_spaced_bounds(2))
         return optimal_bounds
+    
+    def c_bounds(self):
+        ob = [[0.0, 0.16666666666666666, 0.5666666666666667, 0.5666666666666667, 0.7666666666666666, 0.9], [0.0, 0.5, 0.5, 0.6, 0.6666666666666667, 0.6666666666666667], [0.0, 0.1, 0.26666666666666666, 0.6166666666666667, 0.8166666666666667, 0.9666666666666667], [0.0, 0.25, 0.31666666666666665, 0.8666666666666667, 0.8666666666666667, 0.8666666666666667], [0.0, 0.1, 0.2, 0.5, 0.6, 1.0], [0.0, 0.5]]
+        ob = [[0.0, 0.16666666666666666, 0.5666666666666667, 0.5666666666666667, 0.7666666666666666, 0.9], [0.0, 0.5, 0.5, 0.6, 0.6666666666666667, 0.6666666666666667], [0.0, 0.1, 0.25, 0.6166666666666667, 0.8666666666666667, 0.9666666666666667], [0.0, 0.25, 0.31666666666666665, 0.8666666666666667, 0.8666666666666667, 0.8666666666666667], [0.0, 0.1, 0.2, 0.5, 0.6, 1.0], [0.0, 0.5]]
+        return ob
 
     def create_optimizer(self):
         return Optimizer()
     
-    def test_eval_bounds(self, nrows=1000):
+    def test_eval_bounds(self, nrows=50000, offset=3300000, trainoffset=0):
         op = self.create_optimizer()
-        equal_bounds = self.equal_bounds()
-        op.eval_bounds(equal_bounds)
+        tb = self.best_bounds()
+        tb = self.equal_bounds()
+        tb = self.c_bounds()
+        ev = op.eval_bounds(tb, nrows, offset, trainoffset)
+        print(ev)
+
     
     def test_optimize_bounds(self):
         op = self.create_optimizer()
-        equal_bounds = self.equal_bounds()
-        op.optimize_bounds(equal_bounds)
+        bounds = self.equal_bounds()
+        #bounds = self.c_bounds()
+        op.optimize_bounds(bounds)
 
 
 if __name__ == "__main__":
