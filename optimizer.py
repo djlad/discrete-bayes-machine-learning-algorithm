@@ -38,7 +38,7 @@ class Optimizer():
         gain = db.calc_gain(cm, db.gain_matrix)
         return gain
     
-    def optimize_bounds(self, start_bounds, rounds=1000000, d=.05):
+    def optimize_bounds(self, start_bounds, rounds=1000000, d=.01):
         nrows = 50000
         offset = 3300000
         trainoffset = 0
