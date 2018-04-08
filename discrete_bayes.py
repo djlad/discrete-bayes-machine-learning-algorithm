@@ -1,6 +1,7 @@
 import mdarray as md
 import pandas as pd
 import numpy as np
+import random
 
 #mdarray.Mdarray()
 class DiscreteBayes():
@@ -25,7 +26,9 @@ class DiscreteBayes():
         e_gains = md.Mdarray(p_cd.num_levels[:-1])
         gm = self.gain_matrix
         for combo in d_rules:#for all d in D
-            best_rule = -1#rule with best expected_value  -1 means invalid
+            #best_rule = -1#rule with best expected_value  -1 means invalid
+            #start with random assignment:
+            best_rule = random.randint(0,p_cd.num_levels[-1]-1)
             best_ev = 0#best expected_value
 
             for assigned in range(p_cd.num_levels[-1]):
