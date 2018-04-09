@@ -31,8 +31,11 @@ class TestOptimizer(unittest.TestCase):
         #tb = self.best_bounds()
         tb = self.equal_bounds()
         #tb = self.c_bounds()
-        ev = op.eval_bounds(tb, nrows, offset, trainoffset)
-        print(ev)
+        m = float(6**5)
+        kstar = 1000000 / (20*m)
+        kstar = 0
+        ev = op.eval_bounds(tb, nrows, offset, trainoffset, kstar)
+        print ev
 
     
     def test_optimize_bounds(self):
