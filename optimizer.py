@@ -45,34 +45,44 @@ class Optimizer():
         return gain
     
     def optimize_bounds(self, start_bounds, rounds=1000000, d=.01):
+        #number of rows to use at a time
         nrows = 50000
-        offset = 3300000
-        trainoffset = 0
-
+        offset = 3300000#beginning of testing data
+        trainoffset = 0#beginning of training data
         best_gain = 0
         best_bounds = start_bounds
         #number of rounds since change:
         no_change_rounds = 0
+
+        #show current bounds:
         for i in best_bounds:
             print i
         print '\n'
         
         for i in range(rounds):
+            #choose random dimension and boundary
             dim = random.randint(0, len(best_bounds)-2)
             point = random.randint(1, len(best_bounds[dim])-1)
+            #get previous boundary
             lowB = best_bounds[dim][point-1]
+            #get boundary
             bound = best_bounds[dim][point]
+            #get next boundary
             if point == len(best_bounds[dim])-1:
                 highB = 1
             else:
                 highB = best_bounds[dim][point+1]
+            #find points between previous and next boundary:
             space = highB - lowB
             spacePoints = np.floor(space/d)
             if spacePoints > 1:
+                #pick random point between previous and next boundary
                 newBound = random.randint(1, spacePoints) * d + lowB
                 best_bounds[dim][point] = newBound
+                #test new boundary
                 test_gain = self.eval_bounds(best_bounds, nrows)
 
+                #update boundary
                 if test_gain >= best_gain :
                     best_gain = test_gain
                     no_change_rounds = 1
