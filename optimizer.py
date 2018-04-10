@@ -22,7 +22,6 @@ class Optimizer():
     def eval_bounds(self, bounds, nrows=1000000, offset=3300000, trainoffset=0, kstar=0):
         q = self.create_quantzier()
         db = self.create_discrete_bayes()
-        bounds
         con = dbs.connect("observations.db")
         counts = q.count_obs(con, bounds, nrows, trainoffset)
         con.close()

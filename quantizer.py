@@ -174,6 +174,7 @@ class Quantizer():
     def levels_from_data(self, df):
         dp = self.dimensional_probabilities(df,10000)
         de = self.dimensional_entropy(dp[:-1])
+        print de
         return self.calc_levels(de, 10000)
         
     def data_to_hash_count(self, con):
