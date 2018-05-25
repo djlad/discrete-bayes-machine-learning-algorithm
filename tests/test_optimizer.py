@@ -1,10 +1,12 @@
 import unittest
 from optimizer import Optimizer
 import quantizer
+import os
+#import inputs.equal_bounds
 
 class TestOptimizer(unittest.TestCase):
     def equal_bounds(self):
-        levels = [quantizer.equal_spaced_bounds(6) for i in range(5)]
+        levels = [quantizer.equal_spaced_bounds(7) for i in range(5)]
         levels.append(quantizer.equal_spaced_bounds(2))
         return levels
 
@@ -27,23 +29,34 @@ class TestOptimizer(unittest.TestCase):
     
     def test_eval_bounds(self, nrows=100000, offset=3300000, trainoffset=0):
         op = self.create_optimizer()
-        #tb = self.best_bounds()
-        tb = self.equal_bounds()
+        tb = self.best_bounds()
+        #tb = self.equal_bounds()
         #tb = self.c_bounds()
-        kstar = 223
+        kstar = 0
         ev = op.eval_bounds(tb, nrows, offset, trainoffset, kstar)
+        print kstar
         print ev
     
     def test_optimize_bounds(self):
         op = self.create_optimizer()
         bounds = self.equal_bounds()
-        bounds = self.c_bounds()
-        op.optimize_bounds(bounds)
+        #bounds = self.c_bounds()
+        #config = inputs.equal_bounds.input
+        ctext = read_input('e_bounds1.txt')
+        config = eval(ctext)
+        op.optimize_bounds(config)
     
     def test_probability_convergence(self):
         for i in range(50):
             self.test_eval_bounds(i*2000)
 
+
+
+def read_input(file_name):
+    f = open(os.path.join('inputs', file_name), 'r')
+    txt = f.read()
+    f.close()
+    return txt
 
 if __name__ == "__main__":
     unittest.main()
