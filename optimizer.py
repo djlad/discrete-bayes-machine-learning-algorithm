@@ -51,7 +51,60 @@ class Optimizer():
         gain = db.calc_gain(cm, db.gain_matrix)
         return gain
     
+    def get_left_right_bounds(self, bounds, dim, point):
+        '''gets left right and middle bounds of a bound'''
+        #get left boundary
+        lowB = bounds[dim][point-1]
+        #get boundary
+        bound = bounds[dim][point]
+        #get right boundary
+        if point == len(bounds[dim])-1:
+            highB = 1
+        else:
+            highB = bounds[dim][point+1]
+        return lowB, bound, highB
+
+
+    def optimize_bounds_uniform(self, config, write_output):
+        bounds = config['start_bounds']
+        d = config['d']
+        d = .01
+        best_gain = self.eval_bounds(bounds, config)
+        test_gain = 0
+        for dim_index, dim in enumerate(bounds[:-1]):
+            print '{} dimension started'.format(dim_index)
+            for bound_index, bound in enumerate(dim[1:]):
+                glrb = self.get_left_right_bounds
+                bs = glrb(bounds, dim_index, bound_index+1)
+                #new_points = list(np.arange(bs[0], bs[2], d))[1:-1]
+                new_points = [bs[1]-d, bs[1]+d]
+
+                for newp in new_points:
+                    bounds[dim_index][bound_index+1] = newp
+                    test_gain = self.eval_bounds(bounds, config)
+
+                    round_results = {
+                                'input file: {}': config['input file'],
+                                'test gain: {}': test_gain,
+                                'best gain: {}': best_gain,
+                                'test bounds: {}': bounds
+                            }
+                    result_str = self.create_round_res_str(round_results)
+                    print result_str
+                    print '\n'
+                    if test_gain > best_gain:
+                        best_gain = test_gain
+                        #return bounds
+                    else:
+                        bounds[dim_index][bound_index+1] = bs[1]
+        if test_gain > best_gain:
+            return bounds
+        return None
+        
+
+    
     def optimize_bounds(self, config, write_output):
+        '''optimize bounds by randomly peturbing bounds'''
         print config
         time_start = time.time()
         rounds = config['rounds']
@@ -88,15 +141,9 @@ class Optimizer():
             #choose random dimension and boundary
             dim = random.randint(0, len(best_bounds)-2)
             point = random.randint(1, len(best_bounds[dim])-1)
-            #get left boundary
-            lowB = best_bounds[dim][point-1]
-            #get boundary
-            bound = best_bounds[dim][point]
-            #get right boundary
-            if point == len(best_bounds[dim])-1:
-                highB = 1
-            else:
-                highB = best_bounds[dim][point+1]
+
+            lowB, bound, highB = self.get_left_right_bounds(best_bounds, dim, point)
+
             #find points between previous and next boundary:
             space = highB - lowB
             spacePoints = np.floor(space/d)-1
@@ -129,7 +176,6 @@ class Optimizer():
                             'best gain: {}': best_gain,
                             'best bounds: {}': best_bounds
                          }
-
                 result_str = self.create_round_res_str(round_results)
                 write_output(result_str)
                 print result_str
@@ -171,7 +217,12 @@ def run_optimize_bounds(file_name):
     config = eval(ctext)
     config['input file'] = file_name
     write_output_function = gen_write_output(file_name)
-    op.optimize_bounds(config, write_output_function)
+    if config['input type'] == 'uniform':
+        print 'uniform peturbation'
+        op.optimize_bounds_uniform(config, write_output_function)
+    else:
+        print 'random peturbation'
+        op.optimize_bounds(config, write_output_function)
 
 if __name__ == '__main__':
     input_file = sys.argv[1]
