@@ -10,6 +10,8 @@ from pprint import pprint
 import random
 import time
 
+import sys, os
+
 class Optimizer():
     def __init__(self):
         pass
@@ -141,3 +143,23 @@ class Optimizer():
                 formatted_strs.append(formatted_str)
             result_str = '\n'.join(formatted_strs)
             return result_str
+
+
+
+
+def read_input(file_name):
+    f = open(os.path.join('inputs', file_name), 'r')
+    txt = f.read()
+    f.close()
+    return txt
+
+def run_optimize_bounds(file_name):
+    op = Optimizer()
+    ctext = read_input(file_name)
+    config = eval(ctext)
+    op.optimize_bounds(config)
+
+if __name__ == '__main__':
+    input_file = sys.argv[1]
+    run_optimize_bounds(input_file)
+    
