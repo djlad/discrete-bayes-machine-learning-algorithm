@@ -1,0 +1,17 @@
+{
+    'seed': 58298,
+    'rounds': 0,
+    'd':.001,
+    #number of rows to use at a time
+    'nrows': 3300000,#number of training observations to use at a time
+    'offset': 6600000,#beginning of testing data
+    'trainoffset': 0,#beginning of training data
+    'best_gain': 0,
+    'kstar': 0,
+    'start_bounds':[
+        [0.00000,   0.02037,   0.18117,   0.56374,   0.90676,   0.98718],
+        [0.00000,   0.47436,   0.49150,   0.53603,   0.58948,   0.62023],
+        [0.00000,   0.08321,   0.15193,   0.24154,   0.60653,   0.94493],
+        [0.00000,   0.02697,   0.22574,   0.25494,   0.32456,   0.85316],
+        [0.00000,   0.06348,   0.10362,   0.19162,   0.51352,   0.60375], [0,.5]] 
+}

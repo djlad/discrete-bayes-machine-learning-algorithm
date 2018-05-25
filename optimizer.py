@@ -11,6 +11,7 @@ import random
 import time
 
 import sys, os
+from pprint import pprint
 
 class Optimizer():
     def __init__(self):
@@ -22,7 +23,11 @@ class Optimizer():
     def create_discrete_bayes(self):
         return DiscreteBayes(np.identity(2))
     
-    def eval_bounds(self, bounds, nrows=1000000, offset=3300000, trainoffset=0, kstar=0):
+    def eval_bounds(self, bounds, config):
+        nrows = config['nrows']
+        offset = config['offset']
+        trainoffset = config['trainoffset']
+        kstar = config['kstar']
         q = self.create_quantzier()
         db = self.create_discrete_bayes()
         con = dbs.connect("observations.db")
@@ -46,47 +51,39 @@ class Optimizer():
         gain = db.calc_gain(cm, db.gain_matrix)
         return gain
     
-    def optimize_bounds(self, config):
+    def optimize_bounds(self, config, write_output):
         print config
-        '''
-        rounds = 1000000
-        d = .01
         time_start = time.time()
-        seed = 849323344
-        #number of rows to use at a time
-        nrows = 50000#number of training observations to use at a time
-        offset = 3300000#beginning of testing data
-        trainoffset = 0#beginning of training data
-        best_gain = 0
-        best_bounds = config['start_bounds']
-        #number of rounds since change:
-        no_change_rounds = 0
-        kstar = 0
-        '''
-        time_start = time.time()
-        rounds = 1000000
+        rounds = config['rounds']
         d = config['d']
         seed = config['seed']
         #number of rows to use at a time
         nrows = config['nrows']#number of training observations to use at a time
         offset = config['offset']#beginning of testing data
         trainoffset = config['trainoffset']#beginning of training data
-        best_gain = config['best_gain']
         best_bounds = config['start_bounds']
-        kstar = config['kstar']
+        best_gain = test_gain = self.eval_bounds(best_bounds, config)
+
         #number of rounds since change:
-        no_change_rounds = 0
-        print 'kstar'
-        print kstar
-
-
-        random.seed(seed)
-
         #show current bounds:
         for i in best_bounds:
             print i
         print '\n'
-        
+
+        '''record initial evaluation'''
+        no_change_rounds = 0
+        round_results = {
+                    'input file: {}': config['input file'],
+                    'total time: {}': time.time()-time_start,
+                    'rounds since change: {}': no_change_rounds,
+                    'best gain: {}': best_gain,
+                    'best bounds: {}': best_bounds
+                    }
+        result_str = self.create_round_res_str(round_results)
+        write_output(result_str)
+        print result_str + '\n'
+
+        random.seed(seed)
         for i in range(rounds):
             #choose random dimension and boundary
             dim = random.randint(0, len(best_bounds)-2)
@@ -108,7 +105,7 @@ class Optimizer():
                 newBound = random.randint(1, spacePoints) * d + lowB
                 best_bounds[dim][point] = newBound
                 #test new boundary
-                test_gain = self.eval_bounds(best_bounds, nrows, offset, trainoffset, kstar)
+                test_gain = self.eval_bounds(best_bounds, config)
 
                 #update boundary
                 if test_gain >= best_gain :
@@ -125,6 +122,7 @@ class Optimizer():
                     print trainoffset
                 
                 round_results = {
+                            'input file: {}': config['input file'],
                             'total time: {}': time.time()-time_start,
                             'rounds since change: {}': no_change_rounds,
                             'test gain: {}': test_gain,
@@ -133,16 +131,18 @@ class Optimizer():
                          }
 
                 result_str = self.create_round_res_str(round_results)
+                write_output(result_str)
                 print result_str
                 print '\n'
     
     def create_round_res_str(self, round_results):
-            formatted_strs = []
-            for result in round_results:
-                formatted_str = result.format(round_results[result])
-                formatted_strs.append(formatted_str)
-            result_str = '\n'.join(formatted_strs)
-            return result_str
+        '''creates results string for one iteration'''
+        formatted_strs = []
+        for result in round_results:
+            formatted_str = result.format(round_results[result])
+            formatted_strs.append(formatted_str)
+        result_str = '\n'.join(formatted_strs)
+        return result_str
 
 
 
@@ -153,11 +153,25 @@ def read_input(file_name):
     f.close()
     return txt
 
+def gen_write_output(input_file_name):
+    '''function for writing result'''
+    output_file_name = input_file_name.replace('.txt', '')
+    output_file_name += '-output.txt'
+    def write_output(result_str):
+        f = open(os.path.join('outputs', output_file_name), 'w')
+        txt = f.write(result_str)
+        f.close()
+        return txt
+    return write_output
+    
+
 def run_optimize_bounds(file_name):
     op = Optimizer()
     ctext = read_input(file_name)
     config = eval(ctext)
-    op.optimize_bounds(config)
+    config['input file'] = file_name
+    write_output_function = gen_write_output(file_name)
+    op.optimize_bounds(config, write_output_function)
 
 if __name__ == '__main__':
     input_file = sys.argv[1]
