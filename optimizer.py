@@ -14,14 +14,15 @@ import sys, os
 from pprint import pprint
 
 class Optimizer():
-    def __init__(self):
-        pass
+    def __init__(self, gain_matrix):
+        self.gain_matrix = np.array(gain_matrix)
     
     def create_quantzier(self):
         return Quantizer()
     
     def create_discrete_bayes(self):
-        return DiscreteBayes(np.identity(2))
+        #return DiscreteBayes(np.identity(2))
+        return DiscreteBayes(self.gain_matrix)
     
     def eval_bounds(self, bounds, config):
         nrows = config['nrows']
@@ -48,8 +49,11 @@ class Optimizer():
         con = dbs.connect("observations.db")
         test_counts = q.count_obs(con, bounds, nrows, offset)
         cm = db.confusion_matrix(drules, test_counts)
+        gm = db.gain_matrix
+        idm = np.identity(db.gain_matrix.shape[0])
         gain = db.calc_gain(cm, db.gain_matrix)
-        return gain
+        accuracy = db.calc_gain(cm, idm)
+        return gain, accuracy
     
     def get_left_right_bounds(self, bounds, dim, point):
         '''gets left right and middle bounds of a bound'''
@@ -65,12 +69,12 @@ class Optimizer():
         return lowB, bound, highB
 
 
-    def optimize_bounds_uniform(self, config, write_output):
+    def optimize_bounds_uniform(self, config):
         bounds = config['start_bounds']
         d = config['d']
-        d = .01
-        best_gain = self.eval_bounds(bounds, config)
-        test_gain = 0
+        best_gain, acc = self.eval_bounds(bounds, config)
+        best_acc = acc
+        test_gain = best_gain
         for dim_index, dim in enumerate(bounds[:-1]):
             print '{} dimension started'.format(dim_index)
             for bound_index, bound in enumerate(dim[1:]):
@@ -81,12 +85,14 @@ class Optimizer():
 
                 for newp in new_points:
                     bounds[dim_index][bound_index+1] = newp
-                    test_gain = self.eval_bounds(bounds, config)
+                    test_gain, acc = self.eval_bounds(bounds, config)
 
                     round_results = {
                                 'input file: {}': config['input file'],
                                 'test gain: {}': test_gain,
                                 'best gain: {}': best_gain,
+                                'accuracy: {}': acc,
+                                'best accuracy: {}': best_acc,
                                 'test bounds: {}': bounds
                             }
                     result_str = self.create_round_res_str(round_results)
@@ -94,6 +100,8 @@ class Optimizer():
                     print '\n'
                     if test_gain > best_gain:
                         best_gain = test_gain
+                        best_acc = acc
+                        #print 'exiting uniform optimization'
                         #return bounds
                     else:
                         bounds[dim_index][bound_index+1] = bs[1]
@@ -115,7 +123,9 @@ class Optimizer():
         offset = config['offset']#beginning of testing data
         trainoffset = config['trainoffset']#beginning of training data
         best_bounds = config['start_bounds']
-        best_gain = test_gain = self.eval_bounds(best_bounds, config)
+        best_gain, acc = self.eval_bounds(best_bounds, config)
+        best_acc = acc
+        test_gain = best_gain
 
         #number of rounds since change:
         #show current bounds:
@@ -130,6 +140,8 @@ class Optimizer():
                     'total time: {}': time.time()-time_start,
                     'rounds since change: {}': no_change_rounds,
                     'best gain: {}': best_gain,
+                    'accuracy: {}': acc,
+                    'best accuracy: {}': best_acc,
                     'best bounds: {}': best_bounds
                     }
         result_str = self.create_round_res_str(round_results)
@@ -152,11 +164,12 @@ class Optimizer():
                 newBound = random.randint(1, spacePoints) * d + lowB
                 best_bounds[dim][point] = newBound
                 #test new boundary
-                test_gain = self.eval_bounds(best_bounds, config)
+                test_gain, acc = self.eval_bounds(best_bounds, config)
 
                 #update boundary
                 if test_gain >= best_gain :
                     best_gain = test_gain
+                    best_acc = acc
                     no_change_rounds = 1
                 else:
                     best_bounds[dim][point] = bound
@@ -168,18 +181,32 @@ class Optimizer():
                     trainoffset = (trainoffset+nrows) % offset
                     print trainoffset
                 
+                
                 round_results = {
                             'input file: {}': config['input file'],
                             'total time: {}': time.time()-time_start,
                             'rounds since change: {}': no_change_rounds,
                             'test gain: {}': test_gain,
                             'best gain: {}': best_gain,
+                            'accuracy: {}': acc,
+                            'best accuracy: {}': best_acc,
                             'best bounds: {}': best_bounds
                          }
                 result_str = self.create_round_res_str(round_results)
                 write_output(result_str)
                 print result_str
                 print '\n'
+                
+                if no_change_rounds%40 == 0 and no_change_rounds>0:
+                    #try uniform optimize if no change for 50 rounds
+                    print "applying uniform optimization"
+                    uniform_bounds = self.optimize_bounds_uniform(config)
+                    if not uniform_bounds:
+                        return
+                    else:
+                        best_bounds = uniform_bounds
+                        best_gain, best_acc = self.eval_bounds(best_bounds, config)
+                    
     
     def create_round_res_str(self, round_results):
         '''creates results string for one iteration'''
@@ -212,17 +239,19 @@ def gen_write_output(input_file_name):
     
 
 def run_optimize_bounds(file_name):
-    op = Optimizer()
     ctext = read_input(file_name)
     config = eval(ctext)
+    gain_matrix = np.array(config['gain matrix'])
+    op = Optimizer(gain_matrix)
     config['input file'] = file_name
     write_output_function = gen_write_output(file_name)
-    if config['input type'] == 'uniform':
-        print 'uniform peturbation'
-        op.optimize_bounds_uniform(config, write_output_function)
-    else:
+
+    if not 'input type' in config:
         print 'random peturbation'
         op.optimize_bounds(config, write_output_function)
+    elif config['input type'] == 'uniform':
+        print 'uniform peturbation'
+        op.optimize_bounds_uniform(config, write_output_function)
 
 if __name__ == '__main__':
     input_file = sys.argv[1]
