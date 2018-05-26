@@ -124,6 +124,14 @@ class TestQuantizer(unittest.TestCase):
         q = Quantizer()
         q.calc_volumes(levels)
 
+    def test_equal_prob_intervals(self, nrows=10000):
+        column_names = ["f1","f2","f3","f4","f5","class"]
+        data = pd.read_csv("pr_data", names=column_names, delimiter='\s+', nrows=nrows)
+        q = Quantizer()
+        bounds = q.equal_prob_intervals(data, 7)
+        print bounds
+
+
     def runTest(self):
         pass
 

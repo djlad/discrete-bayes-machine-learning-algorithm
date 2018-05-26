@@ -191,6 +191,19 @@ class Quantizer():
         con.close()
         return frequency
     
+    def equal_prob_intervals(self, observations, num_bounds):
+        '''finds boundaries with equal probabilities'''
+        obs = observations.drop('class', axis=1)
+        print obs
+        bounds = []
+        for col in obs:
+            dim_data = obs[col]
+            sorted_dim = dim_data.sort_values().reset_index(drop=True)
+            bounds.append([0])
+            for i in range(num_bounds-1):
+                bound_i = np.floor(float(i+1)*len(sorted_dim)/num_bounds)
+                bounds[-1].append(sorted_dim[bound_i])
+        return bounds
 
 def equal_discrete_func(x, levels=3):
     ratio = x * levels
