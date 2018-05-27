@@ -8,6 +8,7 @@ from test_quantizer import TestQuantizer
 from quantizer import Quantizer
 import quantizer
 import sqlite3 as dbs
+import mdarray as md
 
 class TestDiscreteBayes(unittest.TestCase):
     def equal_bounds(self):
@@ -99,6 +100,40 @@ class TestDiscreteBayes(unittest.TestCase):
         true_assigned = db.eval_rules(drules, test_counts)[-1]
         self.assertAlmostEqual(gain, true_assigned)
         
+    def test_drules_class_assignment(self):
+        #input probabilities from class
+        p_dc_ar = [[.12,.18,.3],[.2,.16,.04]]
+        e = [[1,0],[0,2]]
+        db = DiscreteBayes(e)
+        q = self.create_quantizer()
+        p_dc = md.Mdarray([3, 2])
+        for i in p_dc:
+            p_dc[i] = p_dc_ar[i[1]][i[0]]
+        p_d = q.calc_pd(p_dc)
+        p_cd = db.calc_prob_cd(p_dc, p_d, [.6, .4])
+        d_rules, e_gains = db.bayes_d_rule(p_cd)
+        print 'p_dc'
+        print p_dc
+        print 'p_d'
+        print p_d
+        print 'p_cd'
+        print p_cd
+        print 'd_rules'
+        print d_rules
+        print 'e_gains'
+        print e_gains
+
+        test_data = md.Mdarray([3,2])
+        for i in test_data:
+            test_data[i] = p_dc_ar[i[1]][i[0]]*100
+        print 'test data'
+        print test_data
+        print 'confusion matrix'
+        cm = db.confusion_matrix(d_rules, test_data)
+        print cm
+        print 'gain'
+        print db.calc_gain(e, cm)
+
 
 
 

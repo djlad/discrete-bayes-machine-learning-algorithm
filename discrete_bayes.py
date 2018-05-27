@@ -36,9 +36,12 @@ class DiscreteBayes():
                 for true in range(p_cd.num_levels[-1]):
                     #sum up e(true, assigned) * p(c | d)
                     current_ev += gm[true][assigned] * p_cd[combo + [true]]
+                print combo + [assigned]
+                print current_ev
                 if current_ev > best_ev:
                     best_rule = assigned
                     best_ev = current_ev
+                
             d_rules[combo] = best_rule
             e_gains[combo] = best_ev
 
@@ -64,6 +67,8 @@ class DiscreteBayes():
             true = combo[-1]
             confusion[true, assigned] += test_counts[combo]
         total = test_counts.total()
+        print 'confusion'
+        print confusion/float(total)
         return confusion/float(total)
     
     def calc_gain(self, gain, confusion):
