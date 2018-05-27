@@ -112,17 +112,6 @@ class TestDiscreteBayes(unittest.TestCase):
         p_d = q.calc_pd(p_dc)
         p_cd = db.calc_prob_cd(p_dc, p_d, [.6, .4])
         d_rules, e_gains = db.bayes_d_rule(p_cd)
-        print 'p_dc'
-        print p_dc
-        print 'p_d'
-        print p_d
-        print 'p_cd'
-        print p_cd
-        print 'd_rules'
-        print d_rules
-        print 'e_gains'
-        print e_gains
-
         test_data = md.Mdarray([3,2])
         for i in test_data:
             test_data[i] = p_dc_ar[i[1]][i[0]]*100
@@ -130,9 +119,6 @@ class TestDiscreteBayes(unittest.TestCase):
         print test_data
         print 'confusion matrix'
         cm = db.confusion_matrix(d_rules, test_data)
-        print cm
-        print 'gain'
-        print db.calc_gain(e, cm)
 
 
 
